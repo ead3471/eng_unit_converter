@@ -1,31 +1,12 @@
-from typing import Callable, TypeVar
+from typing import TypeVar
 from enum import Enum
 from abc import ABC, abstractmethod
-import math
-
-
-class Converter():
-    def __init__(self,
-                 from_base: Callable[[float], float],
-                 to_base: Callable[[float], float]) -> None:
-        self.from_base = from_base
-        self.to_base = to_base
-
-
-class LinearConverter(Converter):
-    def __init__(self, from_base_coeff: float, from_base_offset: float):
-        super().__init__(
-            from_base=lambda v: v*from_base_coeff+from_base_offset,
-            to_base=lambda v: (v-from_base_offset)/from_base_coeff)
-
-
-class MultConverter(Converter):
-    def __init__(self, from_base_coeff: float):
-        if from_base_coeff == 0:
-            raise ValueError("Coeff must be != 0")
-        super().__init__(
-            from_base=lambda v: v*from_base_coeff,
-            to_base=lambda v: v/from_base_coeff)
+from converters import (Converter,
+                        LinearConverter,
+                        MultConverter,
+                        PtResistConverter,
+                        CuResistConverter,
+                        NiResistConverter)
 
 
 class Measure(ABC):
@@ -115,7 +96,7 @@ class Pressure(Measure):
         self.base_unit = Pressure.SupportedUnits.Pa
 
 
-class Mass_Flow(Measure):
+class MassFlow(Measure):
     class SupportedUnits(Enum):
         kg_h = MultConverter(1)
         t_h = MultConverter(0.001)
@@ -125,62 +106,86 @@ class Mass_Flow(Measure):
 
     def _set_base_values(self):
         self.base_value = self.unit.value.to_base(self.value)
-        self.base_unit = Mass_Flow.SupportedUnits.kg_h
+        self.base_unit = MassFlow.SupportedUnits.kg_h
 
 
-class PtResistToTemperatureConverter(Converter):
-    def __init__(self, R0: float, A: float, B: float, C: float, D:tuple) -> None:
-
-        def from_base(t):
-            if t<-200 or t > 850:
-                raise ValueError("t must be in [-200,850] C")
-            if -200 <= t <= 0:
-                return R0*(1+A*t+B*(t**2)+C*(t-100)*(t**3))
-            else:
-                return R0*(1+A*t+B*(t**2))
-        
-        def to_base(R):
-            if R/R0 >= 1:
-                return (math.sqrt((A**2)-4*B*(1-R/R0))-A)/(2*B)
-            else:
-                t = 0
-                i = 1
-                for d in D:
-                    t = t + d*(R/R0-1)**i
-            
-        super().__init__(from_base, to_base)
-
-
-class P100(Measure):
+class PlatinumThermoResist(Measure):
+    """Work with resistive temperature sensors
+      SupportedUnits:
+      P100_Ohm - Russian 100П (alpha=0.0391)
+    """
     class SupportedUnits(Enum):
         C = MultConverter(1)
-        Ohm = PtResistToTemperatureConverter(100,
-                                             3.9690e-3,
-                                             -5.841e-7,
-                                             -4.330e-12,
-                                             (251.903, 8.80035, -2.91506, 1.67611))
         F = LinearConverter(1.8, 32)
         K = LinearConverter(1, 273.15)
+        P100_Ohm = PtResistConverter(100,
+                                                  3.9690e-3,
+                                                  -5.841e-7,
+                                                  -4.330e-12,
+                                                  (251.903,
+                                                   8.80035,
+                                                   -2.91506,
+                                                   1.67611))
+
+        P50_Ohm = PtResistConverter(50,
+                                                 3.9690e-3,
+                                                 -5.841e-7,
+                                                 -4.330e-12,
+                                                 (251.903,
+                                                  8.80035,
+                                                  -2.91506,
+                                                  1.67611))
+
+        Pt100_Ohm = PtResistConverter(100,
+                                                   3.9083e-3,
+                                                   -5.775e-7,
+                                                   -4.183e-12,
+                                                   (255.819,
+                                                    9.14550,
+                                                    -2.92363,
+                                                    1.79090))
+
+        Pt50_Ohm = PtResistConverter(50,
+                                                  3.9083e-3,
+                                                  -5.775e-7,
+                                                  -4.183e-12,
+                                                  (255.819,
+                                                   9.14550,
+                                                   -2.92363,
+                                                   1.79090))
+
+        Ni100_Ohm = NiResistConverter(100,
+                                                   5.4963e-3,
+                                                   6.7556e-7,
+                                                   -4.183e-12,
+                                                   (144.096,
+                                                    -25.502,
+                                                    -4.4876))
+
+        Cu100_Ohm = CuResistConverter(100,
+                                                   4.28e-3,
+                                                   -6.2032e-7,
+                                                   8.5154e-10,
+                                                   (233.87,
+                                                   7.9370,
+                                                    -2.0062,
+                                                    -0.3953))
 
     def _set_base_values(self):
         self.base_value = self.unit.value.to_base(self.value)
-        self.base_unit = P100.SupportedUnits.Ohm
+        self.base_unit = PlatinumThermoResist.SupportedUnits.P100_Ohm
 
-class Pt100(Measure):
-    class SupportedUnits(Enum):
-        C = MultConverter(1)
-        Ohm = PtResistToTemperatureConverter(100,
-                                             3.9083e-3,
-                                             -5.775e-7,
-                                             -4.183e-12,
-                                             (255.819, 9.14550, -2.92363, 1.79090))
-        F = LinearConverter(1.8, 32)
-        K = LinearConverter(1, 273.15)
 
-    def _set_base_values(self):
-        self.base_value = self.unit.value.to_base(self.value)
-        self.base_unit = P100.SupportedUnits.Ohm
+# class Current_Measure(Measure):
+#     def __init__(self, value: float, unit: Enum, scale_hi:float, scale_low: float) -> None:
+#         self.scale_hi = scale_hi
+#         self.scale_low = scale_low
+#         super().__init__(value, unit)
 
+#     class SupportedUnits(Enum):
+#         mA = MultConverter(1)
+#         EU = LinearConverter()
+   
 
 if __name__ == "__main__":
     temp_units = Temperature.SupportedUnits
@@ -199,13 +204,11 @@ if __name__ == "__main__":
     press_Pa = Pressure(101325, pres_units.Pa)
     print(press_Pa.convert_to(pres_units.atm))
 
-    p100_units = P100.SupportedUnits
-    p100 = P100(-200, p100_units.C)
-    print(p100.convert_to(p100_units.C))
+    platinum_units = PlatinumThermoResist.SupportedUnits
+    platinum_resistor = PlatinumThermoResist(-200, platinum_units.C)
+    print(platinum_resistor.convert_to(platinum_units.C))
 
-    print(f'{p100} = {p100.convert_to(p100_units.Ohm)} = {p100.convert_to(p100_units.F)}  = {p100.convert_to(p100_units.K)}')
+    print(f'{platinum_resistor} = {platinum_resistor.convert_to(platinum_units.P100_Ohm)} = {platinum_resistor.convert_to(platinum_units.F)}  = {platinum_resistor.convert_to(platinum_units.K)}')
 
-    pt100_units = Pt100.SupportedUnits
-    pt100 = Pt100(-50,pt100_units.C)
-    print(f'{pt100} = {pt100.convert_to(pt100_units.Ohm)} = {pt100.convert_to(pt100_units.F)}  = {pt100.convert_to(pt100_units.K)}')
+    
 
