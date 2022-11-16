@@ -1,44 +1,84 @@
-from typing import Callable
 import math
+from abc import ABC, abstractmethod
 
 
-class Converter():
+class Converter(ABC):
     def __init__(self,
-                 from_base: Callable[[float], float],
-                 to_base: Callable[[float], float],
-                 base_hi=None,
-                 base_low=None) -> None:
-        self.from_base = from_base
-        self.to_base = to_base
+                 base_low=None,
+                 base_hi=None) -> None:
 
-        self.base_hi=base_hi
-        self.base_low=base_low
+        self.base_hi = base_hi
+        self.base_low = base_low
+
         if self.base_hi is not None:
             self.converted_hi = self.from_base(self.base_hi)
         else:
-            self.base_hi = None
-        
+            self.converted_hi = None
+
         if self.base_low is not None:
             self.converted_low = self.from_base(self.base_low)
         else:
-            self.base_hi = None
+            self.converted_low = None
+
+    def _check_limits(self,
+                      value: float,
+                      low_limit: float = None,
+                      hi_limit: float = None,
+                      precision: float = 2):
+        if low_limit is not None:
+            if round(value, precision) < round(low_limit, precision):
+                raise ValueError(f'Value must be >= {low_limit}')
+
+        if hi_limit is not None:
+            if round(value, precision) > round(hi_limit, precision):
+                raise ValueError(f'Value must be <= {hi_limit}')
+
+    @abstractmethod
+    def from_base(self, value) -> float:
+        pass
+
+    @abstractmethod
+    def to_base(self, value) -> float:
+        pass
+
 
 class LinearConverter(Converter):
-    def __init__(self, from_base_coeff: float, from_base_offset: float):
+    def __init__(self,
+                 from_base_coeff: float,
+                 from_base_offset: float,
+                 base_low: float = None,
+                 base_hi: float = None):
         if from_base_coeff == 0:
             raise ValueError('from_base_coeff must be non zero!')
+
+        self.from_base_coeff = from_base_coeff
+        self.from_base_offset = from_base_offset
         super().__init__(
-            from_base=lambda v: v*from_base_coeff+from_base_offset,
-            to_base=lambda v: (v-from_base_offset)/from_base_coeff)
+            base_low=base_low,
+            base_hi=base_hi)
+
+    def from_base(self, value) -> float:
+        self._check_limits(value, self.base_low, self.base_hi)
+        return value*self.from_base_coeff+self.from_base_offset
+
+    def to_base(self, value) -> float:
+        self._check_limits(value, self.converted_low, self.converted_hi)
+        return (value-self.from_base_offset)/self.from_base_coeff
 
 
-class MultConverter(Converter):
-    def __init__(self, from_base_coeff: float):
+class MultConverter(LinearConverter):
+    def __init__(self,
+                 from_base_coeff: float,
+                 base_low: float = None,
+                 base_hi: float = None):
         if from_base_coeff == 0:
-            raise ValueError("from_base_coeff must be non zero")
+            raise ValueError('from_base_coeff must be non zero!')
+
         super().__init__(
-            from_base=lambda v: v*from_base_coeff,
-            to_base=lambda v: v/from_base_coeff)
+            from_base_coeff=from_base_coeff,
+            from_base_offset=0,
+            base_low=base_low,
+            base_hi=base_hi)
 
 
 class PtResistConverter(Converter):
@@ -47,27 +87,37 @@ class PtResistConverter(Converter):
                  A: float,
                  B: float,
                  C: float,
-                 D: tuple) -> None:
+                 D: tuple,
+                 base_low: float = -200,
+                 base_hi: float = 850) -> None:
+        self.R0 = R0
+        self.A = A
+        self.B = B
+        self.C = C
+        self.D = D
+        super().__init__(base_low, base_hi)
 
-        def from_base(t):
-            if t < -200 or t > 850:
-                raise ValueError("t must be in [-200,850] C")
-            if -200 <= t <= 0:
-                return R0*(1+A*t+B*(t**2)+C*(t-100)*(t**3))
-            else:
-                return R0*(1+A*t+B*(t**2))
+    def from_base(self, t):
+        self._check_limits(t, self.base_low, self.base_hi)
 
-        def to_base(R):
-            if R/R0 >= 1:
-                return (math.sqrt((A**2)-4*B*(1-R/R0))-A)/(2*B)
-            else:
-                t = 0
-                for i, d in enumerate(D):
-                    t = t + d*(R/R0-1)**(i+1)
-                    i = i+1
-                return t
+        if -200 <= t <= 0:
+            return self.R0*(1+self.A*t+self.B*(t**2)+self.C*(t-100)*(t**3))
+        else:
+            return self.R0*(1+self.A*t+self.B*(t**2))
 
-        super().__init__(from_base, to_base)
+    def to_base(self, R):
+        self._check_limits(R, self.converted_low, self. converted_hi)
+
+        if R/self.R0 >= 1:
+            return ((math.sqrt((self.A**2)-4*self.B*(1-R/self.R0))-self.A)
+                    /
+                    (2*self.B))
+        else:
+            t = 0
+            for i, d in enumerate(self.D):
+                t = t + d*(R/self.R0-1)**(i+1)
+                i = i+1
+            return t
 
 
 class CuResistConverter(Converter):
@@ -76,29 +126,35 @@ class CuResistConverter(Converter):
                  A: float,
                  B: float,
                  C: float,
-                 D: tuple) -> None:
+                 D: tuple,
+                 base_low: float = -180,
+                 base_hi: float = 200) -> None:
 
-        def from_base(t):
-            if t < -180 or t > 200:
-                raise ValueError("t must be in [-180, 200] C")
-            if -180 <= t <= 0:
-                return R0*(1+A*t+B*t*(t+6.7)+C*(t**3))
-            else:
-                return R0*(1+A*t)
+        self.R0 = R0
+        self.A = A
+        self.B = B
+        self.C = C
+        self.D = D
+        super().__init__(base_low, base_hi)
 
-        def to_base(R):
-            if R < 20.53 or R > 185.6:
-                raise ValueError('R must be ')
+    def from_base(self, t):
+        self._check_limits(t, self.base_low, self.base_hi)
 
-            if R/R0 >= 1:
-                return (R/R0-1)/A
-            else:
-                t = 0
-                for i, d in enumerate(D):
-                    t = t+d*(R/R0-1)**(i+1)
-                return t
+        if -180 <= t <= 0:
+            return self.R0*(1+self.A*t+self.B*t*(t+6.7)+self.C*(t**3))
+        else:
+            return self.R0*(1+self.A*t)
 
-        super().__init__(from_base, to_base)
+    def to_base(self, R):
+        self._check_limits(R, self.converted_low, self. converted_hi)
+
+        if R/self.R0 >= 1:
+            return (R/self.R0-1)/self.A
+        else:
+            t = 0
+            for i, d in enumerate(self.D):
+                t = t+d*(R/self.R0-1)**(i+1)
+            return t
 
 
 class NiResistConverter(Converter):
@@ -107,26 +163,32 @@ class NiResistConverter(Converter):
                  A: float,
                  B: float,
                  C: float,
-                 D: tuple) -> None:
+                 D: tuple,
+                 base_low: float = -60,
+                 base_hi: float = 180) -> None:
 
-        def from_base(t):
-            if t < -60 or t > 180:
-                raise ValueError("t must be in [-60,100] C")
-            if -60 <= t <= 100:
-                return R0*(1+A*t+B*(t**2))
-            else:
-                return R0*(1+A*t+B*(t**2)+C*(t-100)*(t**2))
+        self.R0 = R0
+        self.A = A
+        self.B = B
+        self.C = C
+        self.D = D
+        super().__init__(base_low, base_hi)
 
-        def to_base(R):
-            if R > 223.21 or R < 69.45:
-                raise ValueError('R must be in [69.45, 223.21]')
+    def from_base(self, t):
+        self._check_limits(t, self.base_low, self.base_hi)
 
-            if R <= 161.72:  # t<=100
-                return (math.sqrt((A**2)-4*B*(1-R/R0))-A)/(2*B)
-            else:
-                t = 100
-                for i, d in enumerate(D):
-                    t = t + d*(R/R0-1.6172)**(i+1)
-                return t
+        if -60 <= t <= 100:
+            return self.R0*(1+self.A*t+self.B*(t**2))
+        else:
+            return self.R0*(1+self.A*t+self.B*(t**2)+self.C*(t-100)*(t**2))
 
-        super().__init__(from_base, to_base)
+    def to_base(self, R):
+        self._check_limits(R, self.converted_low, self. converted_hi)
+
+        if R <= 161.72:  # t<=100
+            return (math.sqrt((self.A**2)-4*self.B*(1-R/self.R0))-self.A)/(2*self.B)
+        else:
+            t = 100
+            for i, d in enumerate(self.D):
+                t = t + d*(R/self.R0-1.6172)**(i+1)
+            return t

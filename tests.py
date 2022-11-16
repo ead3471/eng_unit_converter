@@ -67,11 +67,11 @@ class TestConverters(TestCase):
         self.assertEqual(converter.from_base(2), 84)
         self.assertEqual(converter.to_base(84), 2)
 
-    def check_converter_bounds(self,
-                               converter: Converter,
-                               base_value_borders: list,
-                               converted_value_borders: list):
+    def check_converter_bounds(self, converter: Converter):
 
+        base_value_borders = (converter.base_low-1, converter.base_hi+1)
+        converted_value_borders = (converter.converted_low-1,
+                                   converter.converted_hi+1)
         for base_value in base_value_borders:
             with self.subTest(base_value=base_value):
                 with self.assertRaises(ValueError):
@@ -92,6 +92,8 @@ class TestConverters(TestCase):
                                              -2.92363,
                                              1.79090))
 
+        self.check_converter_bounds(pt100_converter)
+
         for temp, resist in PT_100_MEASURE_POINTS.items():
             with self.subTest(temp=temp, resist=resist):
                 self.assertAlmostEqual(resist,
@@ -111,6 +113,8 @@ class TestConverters(TestCase):
                                           -2.0062,
                                           -0.3953))
 
+        self.check_converter_bounds(cu_converter)
+
         for temp, resist in CU_MEASURE_POINTS.items():
             with self.subTest(temp=temp, resist=resist):
                 self.assertAlmostEqual(resist,
@@ -129,9 +133,7 @@ class TestConverters(TestCase):
                                           -25.502,
                                           4.4876))
 
-        self.check_converter_bounds(converter=ni_converter,
-                                   base_value_borders=[-61.0, 181],
-                                   converted_value_borders=[68, 224])
+        self.check_converter_bounds(converter=ni_converter)
 
         for temp, resist in NI_MEASURE_POINTS.items():
             with self.subTest(temp=temp, resist=resist):
