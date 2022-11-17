@@ -1,11 +1,11 @@
 import unittest
 from unittest import TestCase
-from converters import (Converter,
-                        LinearConverter, 
-                        MultConverter, 
-                        PtResistConverter, 
-                        CuResistConverter, 
-                        NiResistConverter)
+from eng_unit_converter.converters import (Converter,
+                                           LinearConverter,
+                                           MultConverter,
+                                           PtResistConverter,
+                                           CuResistConverter,
+                                           NiResistConverter)
 
 
 PT_100_MEASURE_POINTS = {-200.0: 18.52,
@@ -49,23 +49,6 @@ NI_MEASURE_POINTS = {-60.0: 69.45,
 
 
 class TestConverters(TestCase):
-    def test_linear_converter_zero_coeff_raize(self):
-        with self.assertRaises(ValueError):
-            LinearConverter(0, 1)
-
-    def test_linear_converter(self):
-        converter_1 = LinearConverter(from_base_coeff=1, from_base_offset=2)
-        self.assertEqual(converter_1.from_base(2), 4)
-        self.assertEqual(converter_1.to_base(4), 2)
-
-    def test_mult_converter_zero_coeff_raize(self):
-        with self.assertRaises(ValueError):
-            MultConverter(0)
-
-    def test_mult_converter(self):
-        converter = MultConverter(from_base_coeff=42)
-        self.assertEqual(converter.from_base(2), 84)
-        self.assertEqual(converter.to_base(84), 2)
 
     def check_converter_bounds(self, converter: Converter):
 
@@ -81,6 +64,25 @@ class TestConverters(TestCase):
             with self.subTest(converted_value=converted_value):
                 with self.assertRaises(ValueError):
                     converter.to_base(converted_value)
+
+    def test_linear_converter(self):
+        converter_1 = LinearConverter(from_base_coeff=1,
+                                      from_base_offset=2,
+                                      base_low=0,
+                                      base_hi=5)
+        self.check_converter_bounds(converter_1)
+        self.assertEqual(converter_1.from_base(2), 4)
+        self.assertEqual(converter_1.to_base(4), 2)
+
+    def test_mult_converter_zero_coeff_raize(self):
+        with self.assertRaises(ValueError):
+            MultConverter(0)
+
+    def test_mult_converter(self):
+        converter = MultConverter(from_base_coeff=42, base_low=0, base_hi=50)
+        self.check_converter_bounds(converter)
+        self.assertEqual(converter.from_base(2), 84)
+        self.assertEqual(converter.to_base(84), 2)
 
     def test_platinum_resist_converter(self):
         pt100_converter = PtResistConverter(100,
@@ -143,6 +145,8 @@ class TestConverters(TestCase):
                 self.assertAlmostEqual(temp,
                                        ni_converter.to_base(resist),
                                        delta=0.01)
+
+
 
 if __name__ == "__main__":
     unittest.main()
