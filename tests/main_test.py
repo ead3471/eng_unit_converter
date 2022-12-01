@@ -1,5 +1,8 @@
 import unittest
 from unittest import TestCase
+
+from eng_unit_converter.measure import Measure, Temperature
+
 from eng_unit_converter.converters import (Converter,
                                            LinearConverter,
                                            MultConverter,
@@ -7,6 +10,9 @@ from eng_unit_converter.converters import (Converter,
                                            CuResistConverter,
                                            NiResistConverter)
 
+
+
+from enum import Enum
 
 PT_100_MEASURE_POINTS = {-200.0: 18.52,
                          -100.0: 60.26,
@@ -146,6 +152,33 @@ class TestConverters(TestCase):
                                        ni_converter.to_base(resist),
                                        delta=0.01)
 
+
+class TestMeasure(TestCase):
+    def check_converted_measure(self,
+                                source_measure: Measure,
+                                convert_unit: Enum,
+                                expected_value: float,
+                                precision: float = 0.001):
+
+        new_measure: Measure = source_measure.convert_to(convert_unit)
+        self.assertIsInstance(new_measure, source_measure.__class__)
+        self.assertAlmostEqual(new_measure.value,
+                               expected_value,
+                               delta=precision)
+        self.assertEqual(new_measure.unit, convert_unit)
+        self.assertEqual(new_measure.base_value, source_measure.base_value)
+        self.assertEqual(new_measure.base_unit, source_measure.base_unit)
+
+    # def check_measures(self, measure_class: Cl, measures: Dict[Enum, float]):
+    #     for unit, expected_value in measures.items():
+    #         base
+
+    def test_temperature_measure(self):
+        temp_in_C = Temperature(123.5, Temperature.SupportedUnits.C)
+        temp_units = Temperature.SupportedUnits
+        self.check_converted_measure(temp_in_C, temp_units.F, 254.3)
+        self.check_converted_measure(temp_in_C, temp_units.K, 273.15+123.5)
+        self.check_converted_measure(temp_in_C, temp_units.C, temp_in_C.value)
 
 
 if __name__ == "__main__":

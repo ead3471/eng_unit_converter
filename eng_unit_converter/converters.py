@@ -33,12 +33,20 @@ class Converter(ABC):
             if round(value, precision) > round(hi_limit, precision):
                 raise ValueError(f'Value must be <= {hi_limit}')
 
+    def from_base(self, value, precision: float = 2) -> float:
+        self._check_limits(value, self.base_low, self.base_hi, precision)
+        return self._from_base(value)
+
+    def to_base(self, value, precision: float = 2) -> float:
+        self._check_limits(value, self.converted_low, self.converted_hi, precision)
+        return self._to_base(value)
+
     @abstractmethod
-    def from_base(self, value) -> float:
+    def _from_base(self, value) -> float:
         pass
 
     @abstractmethod
-    def to_base(self, value) -> float:
+    def _to_base(self, value) -> float:
         pass
 
 
@@ -57,12 +65,12 @@ class LinearConverter(Converter):
             base_low=base_low,
             base_hi=base_hi)
 
-    def from_base(self, value) -> float:
-        self._check_limits(value, self.base_low, self.base_hi)
+    def _from_base(self, value) -> float:
+        #self._check_limits(value, self.base_low, self.base_hi)
         return value*self.from_base_coeff+self.from_base_offset
 
-    def to_base(self, value) -> float:
-        self._check_limits(value, self.converted_low, self.converted_hi)
+    def _to_base(self, value) -> float:
+        #self._check_limits(value, self.converted_low, self.converted_hi)
         return (value-self.from_base_offset)/self.from_base_coeff
 
 
@@ -97,16 +105,16 @@ class PtResistConverter(Converter):
         self.D = D
         super().__init__(base_low, base_hi)
 
-    def from_base(self, t):
-        self._check_limits(t, self.base_low, self.base_hi)
+    def _from_base(self, t):
+        #self._check_limits(t, self.base_low, self.base_hi)
 
         if -200 <= t <= 0:
             return self.R0*(1+self.A*t+self.B*(t**2)+self.C*(t-100)*(t**3))
         else:
             return self.R0*(1+self.A*t+self.B*(t**2))
 
-    def to_base(self, R):
-        self._check_limits(R, self.converted_low, self. converted_hi)
+    def _to_base(self, R):
+        #self._check_limits(R, self.converted_low, self. converted_hi)
 
         if R/self.R0 >= 1:
             return ((math.sqrt((self.A**2)-4*self.B*(1-R/self.R0))-self.A)
@@ -137,7 +145,7 @@ class CuResistConverter(Converter):
         self.D = D
         super().__init__(base_low, base_hi)
 
-    def from_base(self, t):
+    def _from_base(self, t):
         self._check_limits(t, self.base_low, self.base_hi)
 
         if -180 <= t <= 0:
@@ -145,7 +153,7 @@ class CuResistConverter(Converter):
         else:
             return self.R0*(1+self.A*t)
 
-    def to_base(self, R):
+    def _to_base(self, R):
         self._check_limits(R, self.converted_low, self. converted_hi)
 
         if R/self.R0 >= 1:
@@ -174,16 +182,16 @@ class NiResistConverter(Converter):
         self.D = D
         super().__init__(base_low, base_hi)
 
-    def from_base(self, t):
-        self._check_limits(t, self.base_low, self.base_hi)
+    def _from_base(self, t):
+        #self._check_limits(t, self.base_low, self.base_hi)
 
         if -60 <= t <= 100:
             return self.R0*(1+self.A*t+self.B*(t**2))
         else:
             return self.R0*(1+self.A*t+self.B*(t**2)+self.C*(t-100)*(t**2))
 
-    def to_base(self, R):
-        self._check_limits(R, self.converted_low, self. converted_hi)
+    def _to_base(self, R):
+        #self._check_limits(R, self.converted_low, self. converted_hi)
 
         if R <= 161.72:  # t<=100
             return (math.sqrt((self.A**2)-4*self.B*(1-R/self.R0))-self.A)/(2*self.B)
