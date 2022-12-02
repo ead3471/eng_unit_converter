@@ -41,6 +41,8 @@ class Converter(ABC):
         self._check_limits(value, self.converted_low, self.converted_hi, precision)
         return self._to_base(value)
 
+
+
     @abstractmethod
     def _from_base(self, value) -> float:
         pass
@@ -66,11 +68,9 @@ class LinearConverter(Converter):
             base_hi=base_hi)
 
     def _from_base(self, value) -> float:
-        #self._check_limits(value, self.base_low, self.base_hi)
         return value*self.from_base_coeff+self.from_base_offset
 
     def _to_base(self, value) -> float:
-        #self._check_limits(value, self.converted_low, self.converted_hi)
         return (value-self.from_base_offset)/self.from_base_coeff
 
 
@@ -200,3 +200,13 @@ class NiResistConverter(Converter):
             for i, d in enumerate(self.D):
                 t = t + d*(R/self.R0-1.6172)**(i+1)
             return t
+
+    @classmethod
+    def get_Ni_100(cls):
+        return cls(100,
+                                         5.4963e-3,
+                                         6.7556e-6,
+                                         9.2004e-9,
+                                         (144.096,
+                                          -25.502,
+                                          4.4876))
