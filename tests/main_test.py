@@ -256,9 +256,9 @@ class TestMeasure(TestCase):
 
     def test_analog_masure_to_str(self):
         units = AnalogSensorMeasure.SupportedUnits
-        test_measure = AnalogSensorMeasure(4, units.mA_4_20, 10, 100, 'kPa')
+        test_measure = AnalogSensorMeasure(12, units.mA_4_20, 0, 100, 'kPa')
         physical_measure = test_measure.convert_to(units.MEASURE)
-        self.assertEquals('10.0 kPa', str(physical_measure))
+        self.assertEquals('50.0 kPa', str(physical_measure))
 
     def test_mass_flow(self):
         units = MassFlow.SupportedUnits

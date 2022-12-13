@@ -129,50 +129,6 @@ class PtResistConverter(Converter):
                 i = i+1
             return t
 
-    @classmethod
-    def get_Pt100(cls):
-        return cls(100,
-                   3.9083e-3,
-                   -5.775e-7,
-                   -4.183e-12,
-                   (255.819,
-                    9.14550,
-                    -2.92363,
-                    1.79090))
-
-    @classmethod
-    def get_Pt50(cls):
-        return cls(50,
-                   3.9083e-3,
-                   -5.775e-7,
-                   -4.183e-12,
-                   (255.819,
-                    9.14550,
-                    -2.92363,
-                    1.79090))
-
-    @classmethod
-    def get_P100(cls):
-        return cls(100,
-                   3.9690e-3,
-                   -5.841e-7,
-                   -4.330e-12,
-                   (251.903,
-                    8.80035,
-                    -2.91506,
-                    1.67611))
-
-    @classmethod
-    def get_P50(cls):
-        return cls(50,
-                   3.9690e-3,
-                   -5.841e-7,
-                   -4.330e-12,
-                   (251.903,
-                    8.80035,
-                    -2.91506,
-                    1.67611))
-
 
 class CuResistConverter(Converter):
     def __init__(self,
@@ -217,19 +173,6 @@ class CuResistConverter(Converter):
                 t = t+d*(R/self.R0-1)**(i+1)
             return t
 
-    @classmethod
-    def get_Cu_100(cls):
-        return cls(
-            100,
-            4.28e-3,
-            -6.2032e-7,
-            8.5154e-10,
-            (233.87,
-             7.9370,
-             -2.0062,
-             -0.3953)
-        )
-
 
 class NiResistConverter(Converter):
     def __init__(self,
@@ -269,13 +212,3 @@ class NiResistConverter(Converter):
             for i, d in enumerate(self.D):
                 t = t + d*(R/self.R0-1.6172)**(i+1)
             return t
-
-    @classmethod
-    def get_Ni_100(cls):
-        return cls(100,
-                   5.4963e-3,
-                   6.7556e-6,
-                   9.2004e-9,
-                   (144.096,
-                    -25.502,
-                    4.4876))

@@ -1,16 +1,16 @@
 from typing import TypeVar, Dict
 from enum import Enum
 from abc import ABC, abstractmethod
-from .converters import (Converter,
-                         LinearConverter,
-                         MultConverter,
-                         PtResistConverter,
-                         CuResistConverter,
-                         NiResistConverter)
+from eng_unit_converter.converters import (Converter,
+                                           LinearConverter,
+                                           MultConverter,
+                                           PtResistConverter,
+                                           CuResistConverter,
+                                           NiResistConverter)
 
 
 class UnitsHolder:
-    def __init__(self, eu: str, ) -> None:
+    def __init__(self, eu: str) -> None:
         self.eu = eu
 
     def __str__(self):
@@ -20,15 +20,7 @@ class UnitsHolder:
 class Measure(ABC):
     def __init__(self, value: float,
                  unit: Enum) -> None:
-        """initialize Measure class instanse
 
-        Parameters
-        ----------
-        value : float
-            current measure in engineering unit
-        unit : Enum
-            engineering unit
-        """
         self.value = value
         self.unit = unit
         self._converters: Dict[Enum, Converter] = self._get_converters()
@@ -68,7 +60,7 @@ class Measure(ABC):
         converted_value = converter.from_base(self.base_value)
         return self.__class__(converted_value, unit)
 
-    def __add__(self, other: _Self):
+    def __add__(self, other: _Self) -> _Self:
         if not isinstance(other, self.__class__):
             raise TypeError((f'Values must have the same type {self.__class__}'
                             f' and {other.__class__} are given'))
@@ -79,7 +71,7 @@ class Measure(ABC):
                   convert_to(self.unit))
         return result
 
-    def __sub__(self, other: _Self):
+    def __sub__(self, other: _Self) -> _Self:
         if not isinstance(other, self.__class__):
             raise TypeError((f'Values must have the same type {self.__class__}'
                              f' and {other.__class__} are given'))
@@ -89,6 +81,12 @@ class Measure(ABC):
                   __class__(result_base_value, self.base_unit).
                   convert_to(self.unit))
         return result
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, self.__class__):
+            return False
+
+        return self.base_value == other.base_value
 
     def __str__(self) -> str:
         return f'{self.value} {self.unit.value}'
@@ -200,12 +198,54 @@ class ThermoResistor(Measure):
             self.SupportedUnits.C: MultConverter(1),
             self.SupportedUnits.F: LinearConverter(1.8, 32),
             self.SupportedUnits.K: LinearConverter(1, 273.15),
-            self.SupportedUnits.P100_Ohm: PtResistConverter.get_P100(),
-            self.SupportedUnits.P50_Ohm: PtResistConverter.get_P50(),
-            self.SupportedUnits.Pt100_Ohm: PtResistConverter.get_Pt100(),
-            self.SupportedUnits.Pt50_Ohm: PtResistConverter.get_Pt50(),
-            self.SupportedUnits.Ni100_Ohm: NiResistConverter.get_Ni_100(),
-            self.SupportedUnits.Cu100_Ohm: CuResistConverter.get_Cu_100(),
+            self.SupportedUnits.P100_Ohm: PtResistConverter(100,
+                                                            3.9690e-3,
+                                                            -5.841e-7,
+                                                            -4.330e-12,
+                                                            (251.903,
+                                                             8.80035,
+                                                             -2.91506,
+                                                             1.67611)),
+            self.SupportedUnits.P50_Ohm: PtResistConverter(50,
+                                                           3.9690e-3,
+                                                           -5.841e-7,
+                                                           -4.330e-12,
+                                                           (251.903,
+                                                            8.80035,
+                                                            -2.91506,
+                                                            1.67611)),
+            self.SupportedUnits.Pt100_Ohm: PtResistConverter(100,
+                                                             3.9083e-3,
+                                                             -5.775e-7,
+                                                             -4.183e-12,
+                                                             (255.819,
+                                                              9.14550,
+                                                              -2.92363,
+                                                              1.79090)),
+            self.SupportedUnits.Pt50_Ohm: PtResistConverter(50,
+                                                            3.9083e-3,
+                                                            -5.775e-7,
+                                                            -4.183e-12,
+                                                            (255.819,
+                                                             9.14550,
+                                                             -2.92363,
+                                                             1.79090)),
+            self.SupportedUnits.Ni100_Ohm: NiResistConverter(100,
+                                                             5.4963e-3,
+                                                             6.7556e-6,
+                                                             9.2004e-9,
+                                                             (144.096,
+                                                              -25.502,
+                                                              4.4876)),
+            self.SupportedUnits.Cu100_Ohm: CuResistConverter(100,
+                                                             4.28e-3,
+                                                             -6.2032e-7,
+                                                             8.5154e-10,
+                                                             (233.87,
+                                                              7.9370,
+                                                              -2.0062,
+                                                              -0.3953)
+                                                             ),
         }
 
     def _set_base_unit(self):
