@@ -38,10 +38,11 @@ class Converter(ABC):
         return self._from_base(value)
 
     def to_base(self, value, precision: float = 2) -> float:
-        self._check_limits(value, self.converted_low, self.converted_hi, precision)
+        self._check_limits(value,
+                           self.converted_low,
+                           self.converted_hi,
+                           precision)
         return self._to_base(value)
-
-
 
     @abstractmethod
     def _from_base(self, value) -> float:
@@ -103,19 +104,20 @@ class PtResistConverter(Converter):
         self.B = B
         self.C = C
         self.D = D
+        if base_low < -200:
+            raise ValueError('Pt resistor temp must be >=-200\'C')
+
+        if base_hi > 850:
+            raise ValueError('Pt resistor temp must be <= 850\'C')
         super().__init__(base_low, base_hi)
 
     def _from_base(self, t):
-        #self._check_limits(t, self.base_low, self.base_hi)
-
         if -200 <= t <= 0:
             return self.R0*(1+self.A*t+self.B*(t**2)+self.C*(t-100)*(t**3))
         else:
             return self.R0*(1+self.A*t+self.B*(t**2))
 
     def _to_base(self, R):
-        #self._check_limits(R, self.converted_low, self. converted_hi)
-
         if R/self.R0 >= 1:
             return ((math.sqrt((self.A**2)-4*self.B*(1-R/self.R0))-self.A)
                     /
@@ -126,6 +128,50 @@ class PtResistConverter(Converter):
                 t = t + d*(R/self.R0-1)**(i+1)
                 i = i+1
             return t
+
+    @classmethod
+    def get_Pt100(cls):
+        return cls(100,
+                   3.9083e-3,
+                   -5.775e-7,
+                   -4.183e-12,
+                   (255.819,
+                    9.14550,
+                    -2.92363,
+                    1.79090))
+
+    @classmethod
+    def get_Pt50(cls):
+        return cls(50,
+                   3.9083e-3,
+                   -5.775e-7,
+                   -4.183e-12,
+                   (255.819,
+                    9.14550,
+                    -2.92363,
+                    1.79090))
+
+    @classmethod
+    def get_P100(cls):
+        return cls(100,
+                   3.9690e-3,
+                   -5.841e-7,
+                   -4.330e-12,
+                   (251.903,
+                    8.80035,
+                    -2.91506,
+                    1.67611))
+
+    @classmethod
+    def get_P50(cls):
+        return cls(50,
+                   3.9690e-3,
+                   -5.841e-7,
+                   -4.330e-12,
+                   (251.903,
+                    8.80035,
+                    -2.91506,
+                    1.67611))
 
 
 class CuResistConverter(Converter):
@@ -143,6 +189,13 @@ class CuResistConverter(Converter):
         self.B = B
         self.C = C
         self.D = D
+
+        if base_low < -180:
+            raise ValueError('Cu resistor temp must be >= 180 C')
+
+        if base_hi > 200:
+            raise ValueError('Cu resistor temp must be <= 200 C')
+
         super().__init__(base_low, base_hi)
 
     def _from_base(self, t):
@@ -164,6 +217,19 @@ class CuResistConverter(Converter):
                 t = t+d*(R/self.R0-1)**(i+1)
             return t
 
+    @classmethod
+    def get_Cu_100(cls):
+        return cls(
+            100,
+            4.28e-3,
+            -6.2032e-7,
+            8.5154e-10,
+            (233.87,
+             7.9370,
+             -2.0062,
+             -0.3953)
+        )
+
 
 class NiResistConverter(Converter):
     def __init__(self,
@@ -180,21 +246,24 @@ class NiResistConverter(Converter):
         self.B = B
         self.C = C
         self.D = D
+
+        if base_low < -60:
+            raise ValueError('Ni resistor temp must be >= -60 C')
+
+        if base_hi > 200:
+            raise ValueError('Ni resistor temp must be <= 180 C')
         super().__init__(base_low, base_hi)
 
     def _from_base(self, t):
-        #self._check_limits(t, self.base_low, self.base_hi)
-
         if -60 <= t <= 100:
             return self.R0*(1+self.A*t+self.B*(t**2))
         else:
             return self.R0*(1+self.A*t+self.B*(t**2)+self.C*(t-100)*(t**2))
 
     def _to_base(self, R):
-        #self._check_limits(R, self.converted_low, self. converted_hi)
-
         if R <= 161.72:  # t<=100
-            return (math.sqrt((self.A**2)-4*self.B*(1-R/self.R0))-self.A)/(2*self.B)
+            return ((math.sqrt((self.A**2)-4*self.B*(1-R/self.R0))-self.A)
+                    / (2*self.B))
         else:
             t = 100
             for i, d in enumerate(self.D):
@@ -204,9 +273,9 @@ class NiResistConverter(Converter):
     @classmethod
     def get_Ni_100(cls):
         return cls(100,
-                                         5.4963e-3,
-                                         6.7556e-6,
-                                         9.2004e-9,
-                                         (144.096,
-                                          -25.502,
-                                          4.4876))
+                   5.4963e-3,
+                   6.7556e-6,
+                   9.2004e-9,
+                   (144.096,
+                    -25.502,
+                    4.4876))

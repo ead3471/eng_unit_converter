@@ -1,6 +1,6 @@
 import unittest
 from unittest import TestCase
-from typing import Dict, List
+from typing import Dict
 
 from eng_unit_converter.measure import (Measure,
                                         Temperature,
@@ -14,7 +14,6 @@ from eng_unit_converter.converters import (Converter,
                                            PtResistConverter,
                                            CuResistConverter,
                                            NiResistConverter)
-
 
 
 from enum import Enum
@@ -181,7 +180,9 @@ class TestMeasure(TestCase):
                        measures: dict,
                        precision: float = 0.001):
         for unit, value in measures.items():
-            with self.subTest(source_measure=source_measure, unit = unit.name, value = value):
+            with self.subTest(source_measure=source_measure,
+                              unit=unit.name,
+                              value=value):
                 self.check_converted_measure(source_measure, unit, value)
 
     def test_temperature_measure(self):
@@ -196,7 +197,7 @@ class TestMeasure(TestCase):
         measure_hi = 250
         measure_low = 50
 
-        check_dict: Dict(int, Dict(AnalogSensorMeasure.SupportedUnits, float))={
+        check_dict: Dict(int, Dict(measure_units, float)) = {
             0: {
                 measure_units.mA_4_20: 4,
                 measure_units.mA_0_20: 0,
@@ -226,7 +227,7 @@ class TestMeasure(TestCase):
                                                  measure_hi,
                                                  'some_unit')
 
-            self.check_measures(analog_measure,measure_pairs)
+            self.check_measures(analog_measure, measure_pairs)
 
     def test_mass_flow(self):
         units = MassFlow.SupportedUnits
@@ -236,13 +237,13 @@ class TestMeasure(TestCase):
             units.kg_s: 50/3600,
             units.t_h: 50/1000,
             units.t_s: 50/1000/3600
-            }
+        }
         self.check_measures(mass_measure, measures)
 
     def test_thermo_resistor(self):
         units = ThermoResistor.SupportedUnits
-        
-        values_dicts:Dict(units, Dict(float, float)) = {
+
+        values_dicts: Dict(units.__class__, Dict(float, float)) = {
             units.P100_Ohm: P100_MEASURE_POINTS,
             units.Pt100_Ohm: PT_100_MEASURE_POINTS,
             units.Cu100_Ohm: CU_MEASURE_POINTS,
@@ -252,17 +253,13 @@ class TestMeasure(TestCase):
         }
 
         for unit, test_measures in values_dicts.items():
-            a=5
             for celsius_value, converted_value in test_measures.items():
                 resistor = ThermoResistor(celsius_value, units.C)
-                with self.subTest(resistor=resistor, unit=unit.name, converted_value=converted_value ):
-                    self.check_converted_measure(resistor, unit, converted_value,precision=0.01)
-           
-
-
-        
-
-
+                with self.subTest(resistor=resistor,
+                                  unit=unit.name,
+                                  converted_value=converted_value):
+                    self.check_converted_measure(
+                        resistor, unit, converted_value, precision=0.01)
 
 
 if __name__ == "__main__":
