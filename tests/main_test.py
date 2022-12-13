@@ -192,6 +192,31 @@ class TestMeasure(TestCase):
         self.check_converted_measure(temp_in_C, temp_units.K, 273.15+123.5)
         self.check_converted_measure(temp_in_C, temp_units.C, temp_in_C.value)
 
+    def test_temperature_measure_arithmetic(self):
+        units = Temperature.SupportedUnits
+        value1 = Temperature(10, units.C)
+        value2 = Temperature(283.15, units.K)  # 10 C
+        summ: Temperature = value1 + value2
+        self.assertIsInstance(summ, Temperature)
+        self.assertEquals(summ.unit, units.C)
+        self.assertEquals(summ.value, 20.0)
+
+        summ: Temperature = value2 + value2
+        self.assertIsInstance(summ, Temperature)
+        self.assertEquals(summ.unit, units.K)
+        self.assertEquals(summ.value, 293.15)
+
+        value3 = Temperature(95, units.F)  # 35C
+        summ: Temperature = value3+value2+value1
+        self.assertIsInstance(summ, Temperature)
+        self.assertEquals(summ.unit, units.F)
+        self.assertEquals(summ.value, 131.0)  # 55C
+
+        summ: Temperature = value3-value2-value1
+        self.assertIsInstance(summ, Temperature)
+        self.assertEquals(summ.unit, units.F)
+        self.assertEquals(summ.value, 59.0)  # 15C
+
     def test_analog_sensor_measure(self):
         measure_units = AnalogSensorMeasure.SupportedUnits
         measure_hi = 250
