@@ -6,7 +6,8 @@ from eng_unit_converter.measure import (Measure,
                                         Temperature,
                                         AnalogSensorMeasure,
                                         MassFlow,
-                                        ThermoResistor)
+                                        ThermoResistor,
+                                        Pressure)
 
 from eng_unit_converter.converters import (Converter,
                                            LinearConverter,
@@ -270,6 +271,23 @@ class TestMeasure(TestCase):
             units.t_s: 50/1000/3600
         }
         self.check_measures(mass_measure, measures)
+
+    def test_pressure(self):
+        units = Pressure.SupportedUnits
+        pressure_measure = Pressure(101325, units.Pa)
+        check_measures: Dict(units.__class__, Dict(float, float)) = {
+            units.kPa: 101.325,
+            units.Pa: 101325,
+            units.MPa: 0.101325,
+            units.bar: 1.01325,
+            units.atm: 1,
+            units.kgs_m_2: 10332.2744,
+            units.kgs_sm_2: 0.00103322744,
+            units.m_h20: 10.3322744,
+            units.mm_h20: 10332.2744,
+            units.mm_hg: 759.999896
+        }
+        self.check_measures(pressure_measure, check_measures)
 
     def test_thermo_resistor(self):
         units = ThermoResistor.SupportedUnits

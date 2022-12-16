@@ -135,11 +135,11 @@ class Pressure(Measure):
     def _get_converters(self) -> Dict[Enum, Converter]:
         return {
             self.SupportedUnits.Pa: MultConverter(1),
-            self.SupportedUnits.kPa: MultConverter(1000),
-            self.SupportedUnits.MPa: MultConverter(1000000),
-            self.SupportedUnits.kgs_sm_2: MultConverter(0.0000102),
+            self.SupportedUnits.kPa: MultConverter(1e-3),
+            self.SupportedUnits.MPa: MultConverter(1e-6),
+            self.SupportedUnits.kgs_sm_2: MultConverter(0.000000010197162),
             self.SupportedUnits.kgs_m_2: MultConverter(0.10197162),
-            self.SupportedUnits.bar: MultConverter(1e-5),
+            self.SupportedUnits.bar: MultConverter(0.00001),
             self.SupportedUnits.mm_hg: MultConverter(0.0075006158),
             self.SupportedUnits.mm_h20: MultConverter(0.10197162),
             self.SupportedUnits.m_h20: MultConverter(0.00010197162),

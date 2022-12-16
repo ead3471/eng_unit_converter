@@ -2,7 +2,7 @@
 Supports base set of Engineering units.
 You can convert one unit to another and create on conversion.
 Also supports convertion base set of termoresistors(Pt100, 100P, Cu etc) and analog sensors(4-20mA, 1-5V)
-## Using Samples
+## Examples of use
 1. Temperature<br>
 ```
     units = Temperature.SupportedUnits
