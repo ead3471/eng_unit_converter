@@ -7,6 +7,7 @@ from eng_unit_converter.converters import (Converter,
                                            PtResistConverter,
                                            CuResistConverter,
                                            NiResistConverter)
+import math
 
 
 class UnitsHolder:
@@ -71,6 +72,16 @@ class Measure(ABC):
                   convert_to(self.unit))
         return result
 
+    def _round_to(self, num: float, digits=3):
+        if num == 0:
+            return 0
+        if num == int(num):
+            return round(num, 2)
+        scale = int(-math.floor(math.log10(abs(num - int(num))))) + digits - 1
+        if scale < digits:
+            scale = digits
+        return round(num, scale)
+
     def __sub__(self, other: _Self) -> _Self:
         if not isinstance(other, self.__class__):
             raise TypeError((f'Values must have the same type {self.__class__}'
@@ -89,7 +100,7 @@ class Measure(ABC):
         return self.base_value == other.base_value
 
     def __str__(self) -> str:
-        return f'{self.value} {self.unit.value}'
+        return f'{self._round_to(self.value)} {self.unit.value}'
 
     def __repr__(self) -> str:
         return (f'Value:{self.value} {self.unit.value}.'
