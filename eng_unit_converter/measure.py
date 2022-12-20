@@ -138,7 +138,9 @@ class Pressure(Measure):
         mm_hg = UnitsHolder('mm.hg')
         mm_h20 = UnitsHolder('mm.H2O')
         m_h20 = UnitsHolder('m.H2O')
-        atm = UnitsHolder('atm')
+        atm_ph = UnitsHolder('atm_ph')
+        atm_t = UnitsHolder('atm_t')
+        psi = UnitsHolder('psi')
 
     def _set_base_unit(self):
         self.base_unit = Pressure.SupportedUnits.Pa
@@ -148,14 +150,15 @@ class Pressure(Measure):
             self.SupportedUnits.Pa: MultConverter(1),
             self.SupportedUnits.kPa: MultConverter(1e-3),
             self.SupportedUnits.MPa: MultConverter(1e-6),
-            self.SupportedUnits.kgs_sm_2: MultConverter(0.000000010197162),
+            self.SupportedUnits.kgs_sm_2: MultConverter(0.000010197162),
             self.SupportedUnits.kgs_m_2: MultConverter(0.10197162),
             self.SupportedUnits.bar: MultConverter(0.00001),
             self.SupportedUnits.mm_hg: MultConverter(0.0075006158),
             self.SupportedUnits.mm_h20: MultConverter(0.10197162),
             self.SupportedUnits.m_h20: MultConverter(0.00010197162),
-            self.SupportedUnits.atm: MultConverter(0.0000098692327)
-
+            self.SupportedUnits.atm_ph: MultConverter(0.0000098692327),
+            self.SupportedUnits.atm_t: MultConverter(0.0000102),
+            self.SupportedUnits.psi: MultConverter(0.00014503774)
         }
 
 

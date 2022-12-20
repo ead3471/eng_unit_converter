@@ -280,12 +280,14 @@ class TestMeasure(TestCase):
             units.Pa: 101325,
             units.MPa: 0.101325,
             units.bar: 1.01325,
-            units.atm: 1,
+            units.atm_ph: 1,
+            units.atm_t: 1.033,
             units.kgs_m_2: 10332.2744,
-            units.kgs_sm_2: 0.00103322744,
+            units.kgs_sm_2: 1.03322744,
             units.m_h20: 10.3322744,
             units.mm_h20: 10332.2744,
-            units.mm_hg: 759.999896
+            units.mm_hg: 759.999896,
+            units.psi: 14.695949
         }
         self.check_measures(pressure_measure, check_measures)
 
